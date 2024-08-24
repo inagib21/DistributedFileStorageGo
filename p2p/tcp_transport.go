@@ -1,0 +1,92 @@
+package p2p
+
+import (
+	"fmt"
+	"net"
+	"sync"
+)
+
+// TCPeer represents the remote node over a TCP established connection
+type TCPPeer struct {
+	conn     net.Conn // Underlying connection of the peer
+	outbound bool     // Outbound flag, true if this peer was dialed out
+}
+
+// NewTCPPeer creates a new TCPeer instance
+func NewTCPPeer(conn net.Conn, outbound bool) *TCPPeer {
+	return &TCPPeer{
+		conn:     conn,
+		outbound: outbound,
+	}
+}
+
+type TCPTransport struct {
+	ListenAddress string // Address to listen on
+	Listener      net.Listener
+	shakeHands    HandshakeFunc
+	decoder       Decoder
+	// Underlying listener
+	mu    sync.RWMutex          // Mutex for synchronization
+	peers map[net.Addr]*TCPPeer // Map of peers by address
+}
+
+// NewTCPTransport creates a new TCPTransport instance
+func NewTCPTransport(listenAddr string) *TCPTransport {
+	return &TCPTransport{
+		ListenAddress: listenAddr,
+		shakeHands:    NOPHandshakeFunc,
+		peers:         make(map[net.Addr]*TCPPeer),
+	}
+}
+
+// ListenAndAccept listens on the TCP address and starts accepting connections
+func (t *TCPTransport) ListenAndAccept() error {
+	var err error
+
+	t.Listener, err = net.Listen("tcp", t.ListenAddress)
+	if err != nil {
+		return err
+	}
+
+	go t.startAcceptLoop()
+
+	return nil
+}
+
+// startAcceptLoop continuously accepts incoming connections
+func (t *TCPTransport) startAcceptLoop() {
+	for {
+		conn, err := t.Listener.Accept()
+		if err != nil {
+			fmt.Printf("TCP accept error: %s\n", err)
+			continue
+		}
+
+		fmt.Printf("New incoming connection from %v\n", conn)
+
+		go t.handleConn(conn)
+
+	}
+}
+
+type Temp struct{}
+
+// handleConn handles the incoming connection
+func (t *TCPTransport) handleConn(conn net.Conn) {
+	peer := NewTCPPeer(conn, true)
+
+	if err := t.shakeHands(peer); err != nil {
+
+	}
+
+	// Read Loop
+	msg := &Temp{}
+	for {
+
+		if err := t.decoder.Decode(conn, msg); err != nil {
+			fmt.Printf("TCP error: %s\n ", err)
+			continue
+		}
+	}
+
+}
