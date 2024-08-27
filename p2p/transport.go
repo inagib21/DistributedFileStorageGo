@@ -2,6 +2,7 @@ package p2p
 
 // Perr is an interface that represents the remote node.
 type Peer interface {
+	Close() error
 }
 
 // Transport is anything that handles the communicaation
@@ -9,4 +10,5 @@ type Peer interface {
 // form (TCP, UDP, websockets, ... )
 type Transport interface {
 	ListenAndAccept() error
+	consume() <-chan RPC
 }
